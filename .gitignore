@@ -1,0 +1,26 @@
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+env/
+.env
+
+# Temporary files
+/tmp/
+*.tmp
+
+# IDE files
+.vscode/
+.idea/
+
+# Model files and training data
+trained_model/
+processed_files.txt
+
+# OS files
+.DS_Store
+Thumbs.db
