@@ -1,3 +1,121 @@
+#!/usr/bin/env python3
+"""
+GPT-BOBI: AI based on GPT-NEO model with auto-dependency installer
+"""
+
+# Auto-installer for required dependencies
+import sys
+import os
+import subprocess
+import importlib.util
+
+def check_and_install_dependencies():
+    """
+    Check if all required dependencies are installed and install missing ones.
+    Returns True if any packages were installed (requiring restart).
+    """
+    # Define required packages with their import names and pip install names
+    required_packages = {
+        'flask': 'flask',
+        'flask_cors': 'flask-cors', 
+        'transformers': 'transformers',
+        'datasets': 'datasets',
+        'fitz': 'PyMuPDF',
+        'pdfminer': 'pdfminer.six',
+        'docx': 'python-docx',
+        'bs4': 'beautifulsoup4',
+        'torch': 'torch',
+        'pytesseract': 'pytesseract',
+        'PIL': 'pillow',
+        'optuna': 'optuna'
+    }
+    
+    missing_packages = []
+    packages_installed = False
+    
+    print("🔍 Checking dependencies for GPT-BOBI...")
+    
+    # Check each package
+    for import_name, pip_name in required_packages.items():
+        try:
+            if import_name == 'fitz':
+                # Special case for PyMuPDF
+                importlib.import_module('fitz')
+            elif import_name == 'pdfminer':
+                # Special case for pdfminer
+                importlib.import_module('pdfminer.high_level')
+            elif import_name == 'docx':
+                # Special case for python-docx
+                importlib.import_module('docx')
+            elif import_name == 'bs4':
+                # Special case for beautifulsoup4
+                importlib.import_module('bs4')
+            elif import_name == 'PIL':
+                # Special case for pillow
+                importlib.import_module('PIL')
+            else:
+                importlib.import_module(import_name)
+            print(f"✅ {pip_name} is already installed")
+        except ImportError:
+            print(f"❌ {pip_name} is missing")
+            missing_packages.append(pip_name)
+    
+    if not missing_packages:
+        print("🎉 All dependencies are already installed!")
+        return False
+    
+    # Install missing packages
+    print(f"\n📦 Installing {len(missing_packages)} missing package(s)...")
+    print("⚠️  This may take several minutes, especially for PyTorch and Transformers...")
+    
+    for package in missing_packages:
+        try:
+            print(f"⏳ Installing {package}...")
+            # Install with --user flag to avoid permission issues
+            result = subprocess.run([
+                sys.executable, '-m', 'pip', 'install', '--user', package
+            ], capture_output=True, text=True, check=True)
+            print(f"✅ Successfully installed {package}")
+            packages_installed = True
+        except subprocess.CalledProcessError as e:
+            # Try without --user flag if the first attempt fails
+            print(f"⚠️  Installation with --user failed, trying system-wide installation...")
+            try:
+                result = subprocess.run([
+                    sys.executable, '-m', 'pip', 'install', package
+                ], capture_output=True, text=True, check=True)
+                print(f"✅ Successfully installed {package}")
+                packages_installed = True
+            except subprocess.CalledProcessError as e2:
+                print(f"❌ Failed to install {package}: {e2}")
+                print(f"Error output: {e2.stderr}")
+                print(f"💡 You may need to install {package} manually with: pip install {package}")
+        except FileNotFoundError:
+            print("❌ Error: pip is not available. Please install pip first.")
+            print("💡 On Ubuntu/Debian: sudo apt-get install python3-pip")
+            print("💡 On CentOS/RHEL: sudo yum install python3-pip")
+            print("💡 On macOS: curl https://bootstrap.pypa.io/get-pip.py | python3")
+            print(f"Required packages: {', '.join(missing_packages)}")
+            sys.exit(1)
+    
+    if packages_installed:
+        print("\n✅ Package installation completed!")
+    
+    return packages_installed
+
+def restart_script():
+    """Restart the current script with the same arguments."""
+    print("\n🔄 Restarting script to load newly installed packages...")
+    python = sys.executable
+    os.execv(python, [python] + sys.argv)
+
+# Run the dependency check on script startup
+if __name__ == '__main__':
+    packages_were_installed = check_and_install_dependencies()
+    if packages_were_installed:
+        restart_script()
+
+# Now import all required modules (they should be available after auto-install)
 import os
 import logging
 import threading
@@ -258,7 +376,7 @@ def train_model():
 
 # Функция за показване на "BOBI GPT 1.2" като скрийнсейвър
 def display_console_message():
-    message = """
+    message = r"""
 ____   ___  ____ ___    ____ ____ _____   _   ____  
 | __ ) / _ \| __ )_ _|  / ___|  _ \_   _| / | |___ \ 
 |  _ \| | | |  _ \| |  | |  _| |_) || |   | |   __) |
